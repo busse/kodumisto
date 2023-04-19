@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import time
 
@@ -14,17 +15,42 @@ import base64
 import random
 import string
 
-
-
 load_dotenv()
+
+# Usage:
+#  
+#  kodumisto.py issue_number repo_owner repo_name [gpt_model]
+#
+#  kodumisto.py 38 busse kodumisto-playground gpt-4
+#
+# Very likely there are better ways to handle this, and notably this will always cause cli to override env
+
+if len(sys.argv) > 1: # TODO(busse): Need some error checking here
+    argv_issue_number = sys.argv[1]
+
+if len(sys.argv) > 2:
+    repo_owner = sys.argv[2]
+else:
+    repo_owner = os.getenv("REPO_OWNER")
+
+if len(sys.argv) > 3:
+    repo_name = sys.argv[3]
+else:
+    repo_name = os.getenv("REPO_NAME")
+
+if len(sys.argv) > 4:
+    gpt_model = sys.argv[4]
+else:
+    gpt_model = "gpt-3.5-turbo"
+
+
+
 random_string = int(time.time())
-issue_number = 41  # Set the issue number you want to read -- TODO(busse): Command line arg
+issue_number = argv_issue_number  # Set the issue number you want to read
 
 # Set personal access tokens and repository details
 openai_access_token = os.getenv("OPENAI_ACCESS_TOKEN")
 github_access_token = os.getenv("GITHUB_ACCESS_TOKEN")
-repo_owner = os.getenv("REPO_OWNER") # TODO(busse): Command line arg
-repo_name = os.getenv("REPO_NAME") # TODO(busse): Command line arg
 
 def get_filetype_prompt(string):
     # Find the index of the first newline character
@@ -138,11 +164,11 @@ def main():
 
         # Set the options for the OpenAI client
 
-        model = "gpt-4" # TODO(busse): Command line arg
+        model = gpt_model
 
         # Send the issue body as a request to ChatGPT
         response = openai.ChatCompletion.create(
-            model="gpt-4", # TODO(busse): Command line arg
+            model=model,
             messages=[
                 {"role": "user", "content": f"{prompt}"}
             ]
@@ -187,7 +213,7 @@ def main():
             )
 
         # Create a pull request
-        pr_title = f"ChatGPT {model} response for issue #{issue_number}"
+        pr_title = f"ChatGPT `{model}` response for issue #{issue_number}"
         pr_body = f"Pull request containing the ChatGPT `{model}` response for issue #{issue_number}:\n\n{chatgpt_response}"
         base = "main"
         head = branch_name
