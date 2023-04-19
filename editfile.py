@@ -24,24 +24,17 @@ def convert_url_to_raw(text):
     change_domain = strip_blob.replace("github.com", "raw.githubusercontent.com")
     return change_domain
 
-# def extract_filename(url):
-#     filename = os.path.basename(url)
-#     return filename
+def extract_filename(url, branch):
+    parts = url.split("/")
+    try:
+        branch_index = parts.index(branch)
+    except ValueError:
+        return None
 
-# def extract_filename(url):
-#     parsed_url = urllib.parse.urlparse(url)
-#     path = parsed_url.path
-#     if '/' in path:
-#         path_parts = path.split('/')
-#         filename = path_parts[-1]
-#     else:
-#         filename = path
-#     return filename.split('#')[0]
+    path_parts = parts[branch_index + 1:]
+    path = "/".join(path_parts)
 
-def extract_filename(url):
-    path = url.split("/")[-1]
-    filename = path.split("?")[0].split("#")[0]
-    return filename
+    return path
 
 random_string = int(time.time()) 
 
@@ -51,7 +44,7 @@ github_access_token = os.getenv("GITHUB_ACCESS_TOKEN")
 repo_owner = os.getenv("REPO_OWNER")
 repo_name = os.getenv("REPO_NAME")
 
-issue_number = 28  # Set the issue number you want to read
+issue_number = 41  # Set the issue number you want to read
 
 # Initialize the OpenAI client
 openai.api_key = openai_access_token
@@ -75,6 +68,7 @@ response = requests.get(api_url, headers=headers)
 if response.status_code == 200:
     issue_data = response.json()
     issue_body = issue_data["body"]
+    issue_branch = "main"
 
 
 
@@ -85,7 +79,7 @@ else:
     print("Error fetching issue data:", response.status_code)
 
 file_url = convert_url_to_raw(extract_url(issue_body))
-file_name = extract_filename(file_url)
+file_name = extract_filename(file_url, issue_branch)
 
 print(file_url)
 print(file_name)
