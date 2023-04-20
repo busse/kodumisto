@@ -1,3 +1,79 @@
+# kudumisto
+# GitHub Issue to GPT; GPT's Response as a Pull Request
+#
+# Code: https://github.com/busse/kodumisto
+# Playground: https://github.com/busse/kodumisto-playground
+# MIT License: https://github.com/busse/kodumisto/blob/main/LICENSE
+#
+# > Kodumisto (Esperanto): Derived from the Esperanto words 
+# > "kodo" meaning "code" and "umisto" meaning "skilled person"
+# > this name suggests the bot's expertise and competence in editing software code.
+# >   -- ChatGPT-4
+#
+# Supports:
+#
+# NEW FILE: Write Issue to create new file. 
+#  First line MUST be just a file extension including the '.'
+#  The rest of the issue is the prompt to send to GPT.
+#    
+#  Examples:
+#
+#    Make a cool python script (issue title is ignored)
+#    |  .py
+#    |  Create a python script that writes "hello world" to the console.
+#    |  It should also append one of ten random emojis to the end of the output.
+#
+#    Test data: The Simpsons did it first (issue title is ignored)
+#    |  .csv
+#    |  Create a csv file with sample transaction data for a credit card company.
+#    |  The file should have a header row and fifty rows of data. The data should
+#    |  represent credit card transactions for characters from the TV show The
+#    |  Simpsons, mixed with transactions for characters from the TV show
+#    |  Family Guy. Make the data similar, but similar transactions for The Simpsons
+#    |  should have earlier timestamps than those for the Family Guy characters.
+#
+#    Write me a blog post (issue title is ignored)
+#    |  .md
+#    |  Write a post for my Jekyll / GitHub pages blog on what it means for AI to be
+#    |  self-aware, but give wrong answers only.
+#
+#
+# CHANGE FILE: Write Issue to create new file. 
+#  First line of the Issue body MUST be the GitHub URL to the FILE to edit and return PR for.
+#    Note: This is the same format that the GitHub Web UI uses when it creates an Issue from 
+#    a file line number using "Reference in new issue"
+#
+#  Both github.com and raw.githubusercontent.com are supported
+#
+#  The rest of the issue is the prompt to send to GPT.
+#    
+#  Examples:
+#
+#    Let's go to Mars (issue title is ignored)
+#    |  https://github.com/busse/kodumisto-playground/blob/main/directory1/hellomars.py
+#    |  The output of this file should be the red planet, not world.
+#
+#    Test data: Migrate Legacy Simpsons data
+#    |  https://github.com/busse/kodumisto-playground/blob/main/simpsons.csv
+#    |  Refactor this csv file to represent The Family Guy instead of The Simpsons.
+#
+#    Add a new test to draw triangles (issue title is ignored)
+#    |  https://raw.githubusercontent.com/busse/AI-Functions/master/test_ai_function.py
+#    |  Add an additional test function to the script that generates a drawing of a triangle 
+#    |  in SVG format with style infromation, and runs an appropriate test against it.
+#    |  Take care to disturb what is already there as little as possible
+#
+#    TODO(busse): on the triangle test example above, I think it might not work with this latest
+#                 version of kodumisto due to the outdated 'master' taxonomy, 
+#                 but I have it working in an earlier dev version of this script.
+#
+# USAGE:
+#  
+#  kodumisto.py issue_number repo_owner repo_name [gpt_model defaults to gpt-3.5-turbo]
+#
+#  kodumisto.py 38 busse kodumisto-playground gpt-4
+#
+
 import os
 import sys
 import re
@@ -10,19 +86,9 @@ import requests
 from github import Github
 import openai
 
-import json
-import base64
-import random
-import string
-
 load_dotenv()
 
-# Usage:
-#  
-#  kodumisto.py issue_number repo_owner repo_name [gpt_model]
-#
-#  kodumisto.py 38 busse kodumisto-playground gpt-4
-#
+# Initialize variables
 # Very likely there are better ways to handle this, and notably this will always cause cli to override env
 
 if len(sys.argv) > 1: # TODO(busse): Need some error checking here
@@ -42,7 +108,6 @@ if len(sys.argv) > 4:
     gpt_model = sys.argv[4]
 else:
     gpt_model = "gpt-3.5-turbo"
-
 
 
 random_string = int(time.time())
@@ -77,9 +142,10 @@ def determine_file_action(issue_body):
     elif issue_body.startswith("http"):
         return "edit"
     else:
-        return "create-no-extension"
+        return "create-no-extension" # TODO(): define how this should be handled
 
 # For edits: The following three functions help parse the Issue body to get the file to edit
+#   TODO(): refactor to one function?
 def extract_url(text):
     regex = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(/[^\s]*)?'
     match = re.search(regex, text)
@@ -130,11 +196,12 @@ def main():
 
         file_action = determine_file_action(issue_body)
 
-        # We only need a file extension if adding a new file
+        # If it's creating a new file, get the desired file type (for extension only) from the Issue
+
         if file_action == "create":
             file_extension, prompt_body = get_filetype_prompt(issue_body)
 
-            #Set the prompt for an add
+            # Write the remainder of the Issue as the Prompt
             prompt = f"{prompt_body}"
 
         # If it's an edit, we need to get the file path/name
@@ -163,7 +230,6 @@ def main():
         openai.api_key = openai_access_token
 
         # Set the options for the OpenAI client
-
         model = gpt_model
 
         # Send the issue body as a request to ChatGPT
@@ -174,9 +240,9 @@ def main():
             ]
         )
 
-        # Write the ChatGPT response to the console
+
         chatgpt_response = response.choices[0].message.content
-        print("ChatGPT response:", chatgpt_response)
+        #print("ChatGPT response:", chatgpt_response) # leaving this here for lazy debugging
 
         # Create a new branch
         branch_name = f"chatgpt-{model}-response-{issue_number}-{random_string}"
@@ -198,7 +264,6 @@ def main():
             #Get the file's content and SHA
             file_path = file_name
             file_contents = repo.get_contents(file_path, ref="main")
-            #file_data = file_contents.decoded_content.decode("utf-8")
             file_sha = file_contents.sha
 
             # Update the file with the ChatGPT response
@@ -207,7 +272,6 @@ def main():
                 path=file_path,
                 message=f"Update `{file_path}` with ChatGPT `{model}` response for issue {issue_number}",
                 content=new_file_data.encode("utf-8"),
-                #content=new_file_data,
                 sha=file_sha,
                 branch=branch_name,
             )
@@ -225,3 +289,26 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# MIT License
+#
+# Copyright (c) 2023 Chris Busse
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
