@@ -211,7 +211,7 @@ def main():
             file_name = extract_filename(file_url, issue_branch)
 
             # Send a GET request to the GitHub API
-            response_file = requests.get(file_url)
+            response_file = requests.get(file_url, headers=headers)
 
             # Check if the request was successful
             if response_file.status_code == 200:
@@ -285,7 +285,7 @@ def main():
         print(f"Successfully created pull request {pr.number}: {pr.title}")
 
     else:
-        print("Error fetching issue data:", response.status_code)
+        print("Error fetching issue data or error with GPT access:", response.status_code)
 
 if __name__ == "__main__":
     main()
