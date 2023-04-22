@@ -30,6 +30,7 @@ Instructions on using GitHub Actions to trigger kodumisto on an Issue when it is
 
 If you intend for the Issue to create a new file, make the first line of the Issue be the file type extension you would like the new file to have, then write the prompt instructions in the rest of the Issue body. Examples:
 
+```
   Make a cool python script (issue title is ignored)
    |  .py
    |  Create a python script that writes "hello world" to the console.
@@ -48,9 +49,11 @@ If you intend for the Issue to create a new file, make the first line of the Iss
    |  .md
    |  Write a post for my Jekyll / GitHub pages blog on what it means for AI to be
    |  self-aware, but give wrong answers only.
+```
 
 If you intend for the Issue to make changes to an exsiting file, make the first line of the Issue body be the URL to the file in the repo that you want ChatGPT to edit (Both github.com and raw.githubusercontent.com are supported), then write the prompt instructions in the rest of the Issue body. Examples:
 
+```
    Let's go to Mars (issue title is ignored)
    |  https://github.com/busse/kodumisto-playground/blob/main/directory1/hellomars.py
    |  The output of this file should be the red planet, not world.
@@ -68,6 +71,7 @@ If you intend for the Issue to make changes to an exsiting file, make the first 
    TODO(busse): on the triangle test example above, I think it might not work with this latest
                 version of kodumisto due to the outdated 'master' taxonomy from that repo when I forked it, 
                 but I have it working in an earlier dev version of this script.
+```
 
 2. Run kodumisto
 
