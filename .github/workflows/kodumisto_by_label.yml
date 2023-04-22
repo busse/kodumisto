@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r kodumisto-requirements.txt
+        pip install -r requirements-kodumisto-github-actions.txt
 
     - name: Execute Python script
       env:
